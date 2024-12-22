@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -17,7 +15,7 @@ public class HelloController {
 
     @GetMapping("/api/get_tag_by_count")
     public String[] getTagByCount() {
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON文件路径
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
@@ -55,5 +53,104 @@ public class HelloController {
             e.printStackTrace();
             return new String[0];
         }
+    }
+    // ... existing code ...
+
+    @GetMapping("/api/get_tag_by_reputation")
+    public List<String> getTopNTopicsByEngagement() {
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Double> topicEngagementMap = new HashMap<>();
+        List<Integer> reputations = new ArrayList<>();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+                reputations.add(question.owner.reputation);
+                if (question.answers != null) {
+                    for (Answer answer : question.answers) {
+                        reputations.add(answer.owner.reputation);
+                    }
+                }
+                if (question.comments != null) {
+                    for (Comment comment : question.comments) {
+                        reputations.add(comment.owner.reputation);
+                    }
+                }
+            }
+
+            double medianReputation = calculateMedian(reputations);
+
+            for (StackOverflowQuestion question : questions) {
+                double questionEngagement = calculateEngagement(question.owner.reputation, question, medianReputation);
+                updateTopicEngagement(topicEngagementMap, question.tags, questionEngagement);
+
+                if (question.answers != null) {
+                    for (Answer answer : question.answers) {
+                        double answerEngagement = calculateEngagement(answer.owner.reputation, answer, medianReputation);
+                        updateTopicEngagement(topicEngagementMap, question.tags, answerEngagement);
+                    }
+                }
+
+                if (question.comments != null) {
+                    for (Comment comment : question.comments) {
+                        double commentEngagement = calculateEngagement(comment.owner.reputation, comment, medianReputation);
+                        updateTopicEngagement(topicEngagementMap, question.tags, commentEngagement);
+                    }
+                }
+            }
+
+            return getTopNTopics(topicEngagementMap, 10); // Assuming you want the top 10 topics
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+
+
+    private double calculateEngagement(int reputation, Object activity, double medianReputation) {
+        if (reputation <= medianReputation) {
+            return 0;
+        }
+
+        if (activity instanceof StackOverflowQuestion) {
+            return 2; // Each question gives its owner 2 activity points
+        } else if (activity instanceof Answer answer) {
+            return answer.is_accepted ? 5 : 2; // Accepted answers give 5 points, others give 2
+        } else if (activity instanceof Comment) {
+            return 1; // Each comment gives its owner 1 activity point
+        }
+        return 0;
+    }
+
+    private double calculateMedian(List<Integer> reputations) {
+        Collections.sort(reputations);
+        int size = reputations.size();
+        if (size % 2 == 0) {
+            return (reputations.get(size / 2 - 1) + reputations.get(size / 2)) / 2.0;
+        } else {
+            return reputations.get(size / 2);
+        }
+    }
+
+// ... existing code ...
+
+    private void updateTopicEngagement(Map<String, Double> map, List<String> tags, double engagement) {
+        for (String tag : tags) {
+            map.put(tag, map.getOrDefault(tag, 0.0) + engagement);
+        }
+    }
+
+    private List<String> getTopNTopics(Map<String, Double> map, int N) {
+        return map.entrySet().stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(N)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }
