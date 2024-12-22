@@ -40,6 +40,7 @@ public class HelloController {
             List<Map.Entry<String, Integer>> topTags = tagCountMap.entrySet()
                     .stream()
                     .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                    .skip(1)
                     .limit(10)
                     .collect(Collectors.toList());
             String[] results = new String[10];
@@ -175,8 +176,9 @@ public class HelloController {
         return map.entrySet()
                 .stream()
                 .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // Sort by value in descending order
-                .limit(N) // Limit to top N entries
-                .map(entry -> "Engagement: " + entry.getKey() + " Count: " + entry.getValue()) // Format the output
+                .skip(1) // Skip the first entry
+                .limit(N) // Limit to the next N entries
+                .map(entry -> "Tag: " + entry.getKey() + " Count: " + entry.getValue()) // Format the output
                 .collect(Collectors.toList()); // Collect to a list
     }
 }
