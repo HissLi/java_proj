@@ -3,6 +3,7 @@ package com.example.backend;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
@@ -178,7 +179,7 @@ public class HelloController {
     }
 
     @GetMapping("/api/get_reputation_value")
-    public List<Integer> getReputationValue(){//todo: finish(count by second)
+    public List<Integer> getReputationValue(){//todo: finish
         String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
@@ -285,6 +286,65 @@ public class HelloController {
         } catch (IOException e) {
             e.printStackTrace();
             return List.of();
+        }
+    }
+
+    @GetMapping("/api/topic_frequency")
+    public List<String> getTopicFrequency(@RequestParam(required = false) String topic,
+                                          @RequestParam(required = false) Integer topN) {
+        Map<String, Integer> topicFrequencyMap = calculateTopicFrequency();
+        if (topic != null) {
+            // 返回特定主题的频率
+            return List.of("Topic: " + topic + " Frequency: " + topicFrequencyMap.getOrDefault(topic, 0));
+        } else if (topN != null) {
+            // 返回前N个主题
+            return topicFrequencyMap.entrySet()
+                    .stream()
+                    .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                    .limit(topN)
+                    .map(entry -> "Topic: " + entry.getKey() + " Frequency: " + entry.getValue())
+                    .collect(Collectors.toList());
+        } else {
+            return List.of("请提供一个主题或topN参数。");
+        }
+    }
+
+    private Map<String, Integer> calculateTopicFrequency() {
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Integer> tagCountMap = new HashMap<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            // 遍历每个StackOverflowQuestion对象并处理
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                List<String> tags = question.tags; // 假设getTags()返回List<String>
+
+                // 统计每个tag的出现次数
+                for (String tag : tags) {
+                    tagCountMap.put(tag, tagCountMap.getOrDefault(tag, 0) + 1);
+
+                }
+            }
+
+            // 数量多tags
+            List<Map.Entry<String, Integer>> topTags = tagCountMap.entrySet()
+                    .stream()
+                    .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                    .skip(1)
+                    .collect(Collectors.toList());
+           Map<String, Integer> results = new HashMap<>();
+            // 输出前十个tags及其数量
+            for (Map.Entry<String, Integer> entry : topTags) {
+                results.put(entry.getKey(),entry.getValue());
+            }
+            return results;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new HashMap<>();
         }
     }
 
