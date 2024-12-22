@@ -3,6 +3,7 @@ package com.example.backend;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,10 +18,34 @@ import java.util.stream.Collectors;
 
 @RestController
 public class HelloController {
+    @GetMapping("/api/get_large_tags")
+    public List<String>getLargeTags(){//todo:finish. If you want to change the number of tags, see the todo below
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        ObjectMapper objectMapper = new ObjectMapper();
+        Set<String> tags = new HashSet<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                tags.addAll(question.tags);
+            }
+
+            List<String> tagList = new ArrayList<>(tags);
+            Collections.shuffle(tagList); // Shuffle the list to randomize the order
+//            return tagList;//todo: return all
+            return tagList.stream()
+                    .limit(20) // todo: top N tags
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
 
     @GetMapping("/api/get_tag_by_count")
     public String[] getTagByCount() {//todo:finish
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
@@ -64,7 +89,7 @@ public class HelloController {
 
     @GetMapping("/api/get_tag_by_engagement")
     public List<String> getTopNTopicsByEngagement() {//todo:finish
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> topicEngagementMap = new HashMap<>();
         List<Integer> reputations = new ArrayList<>();
@@ -118,9 +143,9 @@ public class HelloController {
         }
     }
 
-    @GetMapping("/api/get_top_mistake")
-    public List<String> getTopNMistake(){//todo: 暂时按照spring-boot写
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+    @GetMapping("/api/get_top_mistake/{tag}")
+    public List<String> getTopNMistake(@PathVariable String tag){//todo: 暂时按照spring-boot写
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
 
@@ -129,7 +154,7 @@ public class HelloController {
 
             while (iterator.hasNext()) {
                 StackOverflowQuestion question = iterator.next();
-                if(question.tags.contains("spring-boot")){
+                if(question.tags.contains(tag)){
                     questions.add(question);
                 }
             }
@@ -151,7 +176,7 @@ public class HelloController {
 
     @GetMapping("/api/get_elapsed_time")
     public List<Integer> getElapsedTime(){//todo: finish(count by second)
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -180,7 +205,7 @@ public class HelloController {
 
     @GetMapping("/api/get_reputation_value")
     public List<Integer> getReputationValue(){//todo: finish
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -209,7 +234,7 @@ public class HelloController {
 
     @GetMapping("/api/get_detail_matrix")
     public int[][] getDetailMatrix(){//todo: finish
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         int[][] matrix = new int[2][2];
@@ -262,7 +287,7 @@ public class HelloController {
 
     @GetMapping("/api/get_answer_length")
     public List<Integer> getAnswerLength(){//todo: finish. (If answer is accepted, count the length)
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json"; // JSON file path
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -310,7 +335,7 @@ public class HelloController {
     }
 
     private Map<String, Integer> calculateTopicFrequency() {
-        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
