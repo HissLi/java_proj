@@ -2,7 +2,7 @@ package com.example.backend;
 import lombok.Data;
 @Data
 public class Notice {
-    private int owner_user_id;
-    private int creation_date;
-    private String body;
+    public int owner_user_id;
+    public int creation_date;
+    public String body;
 }

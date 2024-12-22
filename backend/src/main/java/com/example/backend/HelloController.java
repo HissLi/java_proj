@@ -17,7 +17,7 @@ public class HelloController {
 
     @GetMapping("/api/get_tag_by_count")
     public String[] getTagByCount() {
-        String jsonFilePath = "C:\\Users\\nameless27\\Desktop\\Data.json"; // JSON文件路径
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON文件路径
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
@@ -27,7 +27,7 @@ public class HelloController {
             // 遍历每个StackOverflowQuestion对象并处理
             while (iterator.hasNext()) {
                 StackOverflowQuestion question = iterator.next();
-                List<String> tags = question.getTags(); // 假设getTags()返回List<String>
+                List<String> tags = question.tags; // 假设getTags()返回List<String>
 
                 // 统计每个tag的出现次数
                 for (String tag : tags) {
@@ -46,7 +46,7 @@ public class HelloController {
             int index = 0;
             // 输出前十个tags及其数量
             for (Map.Entry<String, Integer> entry : topTags) {
-                results[index] = "Tag: " + entry.getKey() + ", Count: " + entry.getValue();
+                results[index] = "Tag: " + entry.getKey() + " Count: " + entry.getValue();
                 index++;
             }
             return results;
