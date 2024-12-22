@@ -394,7 +394,7 @@ public class HelloController {
 
     private Map<String, Integer> calculateIssueFrequency(List<StackOverflowQuestion> questions) {
         Map<String, Integer> issueFrequencyMap = new HashMap<>();
-        Pattern pattern = Pattern.compile("/b/w*(error|exception)/w*/b", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
 
         for (StackOverflowQuestion question : questions) {
             Matcher matcher = pattern.matcher(question.body);
