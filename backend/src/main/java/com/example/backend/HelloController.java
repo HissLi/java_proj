@@ -177,6 +177,117 @@ public class HelloController {
         }
     }
 
+    @GetMapping("/api/get_reputation_value")
+    public List<Integer> getReputationValue(){//todo: finish(count by second)
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        List<Integer> elapsedTimes = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+                if(question.is_answered){
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).is_accepted){
+                            elapsedTimes.add(question.answers.get(i).owner.reputation);
+                        }
+                    }
+                }
+            }
+            return elapsedTimes;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+
+    @GetMapping("/api/get_detail_matrix")
+    public int[][] getDetailMatrix(){//todo: finish
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        int[][] matrix = new int[2][2];
+        //todo:matrix[0][0] = without code no answer;
+        //todo:matrix[0][1] = with code no answer;
+        //todo:matrix[1][0] = without code yes answer;
+        //todo:matrix[1][1] = with code yes answer;
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+                if(question.answers == null || question.answers.isEmpty()){
+                    continue;
+                }
+                if(question.is_answered){
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).is_accepted){
+                            if(question.answers.get(i).body.contains("</code>")){
+                                matrix[1][1]++;
+                            }else {
+                                matrix[1][0]++;
+                            }
+                        }else{
+                            if(question.answers.get(i).body.contains("</code>")){
+                                matrix[0][1]++;
+                            }else {
+                                matrix[0][0]++;
+                            }
+                        }
+                    }
+                }else{
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).body.contains("</code>")){
+                            matrix[0][1]++;
+                        }else {
+                            matrix[0][0]++;
+                        }
+
+                    }
+                }
+            }
+            return matrix;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new int[2][2];
+        }
+    }
+
+    @GetMapping("/api/get_answer_length")
+    public List<Integer> getAnswerLength(){//todo: finish. (If answer is accepted, count the length)
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        List<Integer> elapsedTimes = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+                if(question.is_answered){
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).is_accepted){
+                            elapsedTimes.add(countWordsExcludingHtmlAndCode(question.answers.get(i).body));
+                        }
+                    }
+                }
+            }
+            return elapsedTimes;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+
 
     private int calculateEngagement(int reputation, Object activity, double medianReputation) {
         if (reputation <= medianReputation) {
@@ -248,5 +359,15 @@ public class HelloController {
         // 计算两个Instant之间的天数差
 
         return (int) ChronoUnit.SECONDS.between(instant1, instant2);
+    }
+
+    private int countWordsExcludingHtmlAndCode(String answer) {
+        // Replace HTML tags and code tags with a single character
+        String cleanedAnswer = answer.replaceAll("<a\\s+href=\"[^\"]*\">[^<]*</a>", " ")
+                .replaceAll("<code>[^<]*</code>", " ");
+
+        // Split the cleaned answer by whitespace to count words
+        String[] words = cleanedAnswer.trim().split("\\s+");
+        return words.length;
     }
 }
