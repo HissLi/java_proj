@@ -115,28 +115,53 @@ public class HelloController {
         }
     }
 
-//    @GetMapping("/api/get_top_mistake")
-//    public List<String> getTopNMistake(){}
-//
-//    private Map<String, List<String>> findIssuesInQuestions(List<StackOverflowQuestion> questions) {
-//        Map<String, List<String>> issuesMap = new HashMap<>();
-//        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
-//
-//        for (StackOverflowQuestion question : questions) {
-//            Matcher matcher = pattern.matcher(question.body);
-//            List<String> issues = new ArrayList<>();
-//
-//            while (matcher.find()) {
-//                issues.add(matcher.group());
-//            }
-//
-//            if (!issues.isEmpty()) {
-//                issuesMap.put(question.id, issues); // Assuming each question has a unique ID
-//            }
-//        }
-//
-//        return issuesMap;
-//    }
+    @GetMapping("/api/get_top_mistake")
+    public List<String> getTopNMistake(){//todo: now without tag
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                questions.add(iterator.next());
+            }
+
+            Map<String, Integer> issueFrequencyMap = calculateIssueFrequency(questions);
+
+            return issueFrequencyMap.entrySet()
+                    .stream()
+                    .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // Sort by frequency in descending order
+                    .limit(10) // Limit to top 10 issues
+                    .map(entry -> "Issue: " + entry.getKey() + " Count: " + entry.getValue()) // Format the output
+                    .collect(Collectors.toList());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
+
+    private Map<Integer, List<String>> findIssuesInQuestions(List<StackOverflowQuestion> questions) {
+        Map<Integer, List<String>> issuesMap = new HashMap<>();
+        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
+
+        for (StackOverflowQuestion question : questions) {
+            Matcher matcher = pattern.matcher(question.body);
+            List<String> issues = new ArrayList<>();
+
+            while (matcher.find()) {
+                issues.add(matcher.group());
+            }
+
+            if (!issues.isEmpty()) {
+                issuesMap.put(question.question_id, issues); // Assuming each question has a unique ID
+            }
+        }
+
+        return issuesMap;
+    }
 
 
     private int calculateEngagement(int reputation, Object activity, double medianReputation) {
@@ -180,5 +205,24 @@ public class HelloController {
                 .limit(N) // Limit to the next N entries
                 .map(entry -> "Tag: " + entry.getKey() + " Count: " + entry.getValue()) // Format the output
                 .collect(Collectors.toList()); // Collect to a list
+    }
+
+    private Map<String, Integer> calculateIssueFrequency(List<StackOverflowQuestion> questions) {
+        Map<String, Integer> issueFrequencyMap = new HashMap<>();
+        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
+
+        for (StackOverflowQuestion question : questions) {
+            Matcher matcher = pattern.matcher(question.body);
+
+            while (matcher.find()) {
+                String issue = matcher.group().toLowerCase();
+                // Ignore "error", "errors", and "exception"
+                if (!issue.equals("error") && !issue.equals("errors") && !issue.equals("exception") && !issue.equals("exceptions")) {
+                    issueFrequencyMap.put(issue, issueFrequencyMap.getOrDefault(issue, 0) + 1);
+                }
+            }
+        }
+
+        return issueFrequencyMap;
     }
 }
