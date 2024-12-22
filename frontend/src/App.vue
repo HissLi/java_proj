@@ -1,26 +1,58 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { Cpu } from '@element-plus/icons-vue'
+import Analysis from './DataAnalysis.vue'
 
-const message = ref('')
+const currentTopic = ref('Topic')
 
-onMounted(async () => {
-  try {
-    const response = await fetch('http://localhost:8080/hello')
-    if (response.ok) {
-      message.value = await response.text()
-    } else {
-      console.error('Failed to fetch data')
-    }
-  } catch (error) {
-    console.error('Error:', error)
-  }
-})
+function updateTopic(topic: string) {
+  currentTopic.value = topic
+}
 </script>
 
 <template>
-  <el-main>
-    <p>{{ message }}</p>
-  </el-main>
+  <div class="container">
+    <div id="header">
+      <el-icon style="font-size: 48px"><Cpu /></el-icon>
+      <el-text class="mx-1" style="font-size: 48px">Stack Overflow Data Analysis System</el-text>
+    </div>
+    <div class="content">
+      <div id="asider" style="display: flex; flex-direction: column">
+        <el-button type="" text style="font-size: 36px; margin-top: 20px;" @click="updateTopic('Topic')">Topic</el-button>
+        <el-button type="" text style="font-size: 36px; margin-top: 40px;" @click="updateTopic('Mistake')">Mistake</el-button>
+        <el-button type="" text style="font-size: 36px; margin-top: 40px;" @click="updateTopic('Answer')">Answer</el-button>
+      </div>
+      <div id="body">
+        <Analysis :currentTopic="currentTopic" />
+      </div>
+    </div>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: rgb(235.9, 245.3, 255);
+}
+
+#header {
+  height: 100px;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+}
+
+#asider {
+  width: 200px;
+  background-color: rgb(216.8, 235.6, 255);
+}
+
+#body {
+  flex: 1;
+  background-color: #ffffff;
+}
+</style>
