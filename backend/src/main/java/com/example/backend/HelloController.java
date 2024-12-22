@@ -60,7 +60,7 @@ public class HelloController {
     public List<String> getTopNTopicsByEngagement() {
         String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Double> topicEngagementMap = new HashMap<>();
+        Map<String, Integer> topicEngagementMap = new HashMap<>();
         List<Integer> reputations = new ArrayList<>();
         List<StackOverflowQuestion> questions = new ArrayList<>();
 
@@ -86,19 +86,19 @@ public class HelloController {
             double medianReputation = calculateMedian(reputations);
 
             for (StackOverflowQuestion question : questions) {
-                double questionEngagement = calculateEngagement(question.owner.reputation, question, medianReputation);
+                int questionEngagement = calculateEngagement(question.owner.reputation, question, medianReputation);
                 updateTopicEngagement(topicEngagementMap, question.tags, questionEngagement);
 
                 if (question.answers != null) {
                     for (Answer answer : question.answers) {
-                        double answerEngagement = calculateEngagement(answer.owner.reputation, answer, medianReputation);
+                        int answerEngagement = calculateEngagement(answer.owner.reputation, answer, medianReputation);
                         updateTopicEngagement(topicEngagementMap, question.tags, answerEngagement);
                     }
                 }
 
                 if (question.comments != null) {
                     for (Comment comment : question.comments) {
-                        double commentEngagement = calculateEngagement(comment.owner.reputation, comment, medianReputation);
+                        int commentEngagement = calculateEngagement(comment.owner.reputation, comment, medianReputation);
                         updateTopicEngagement(topicEngagementMap, question.tags, commentEngagement);
                     }
                 }
@@ -113,7 +113,7 @@ public class HelloController {
     }
 
 
-    private double calculateEngagement(int reputation, Object activity, double medianReputation) {
+    private int calculateEngagement(int reputation, Object activity, double medianReputation) {
         if (reputation <= medianReputation) {
             return 0;
         }
@@ -140,17 +140,18 @@ public class HelloController {
 
 // ... existing code ...
 
-    private void updateTopicEngagement(Map<String, Double> map, List<String> tags, double engagement) {
+    private void updateTopicEngagement(Map<String, Integer> map, List<String> tags, int engagement) {
         for (String tag : tags) {
-            map.put(tag, map.getOrDefault(tag, 0.0) + engagement);
+            map.put(tag, map.getOrDefault(tag, 0) + engagement);
         }
     }
 
-    private List<String> getTopNTopics(Map<String, Double> map, int N) {
-        return map.entrySet().stream()
-                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-                .limit(N)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+    private List<String> getTopNTopics(Map<String, Integer> map, int N) {
+        return map.entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // Sort by value in descending order
+                .limit(N) // Limit to top N entries
+                .map(entry -> "Engagement: " + entry.getKey() + " Count: " + entry.getValue()) // Format the output
+                .collect(Collectors.toList()); // Collect to a list
     }
 }
