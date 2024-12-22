@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,7 +118,7 @@ public class HelloController {
     }
 
     @GetMapping("/api/get_top_mistake")
-    public List<String> getTopNMistake(){//todo: now without tag
+    public List<String> getTopNMistake(){//todo: 暂时按照spring-boot写
         String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
@@ -125,7 +127,10 @@ public class HelloController {
                 .readValues(new File(jsonFilePath))) {
 
             while (iterator.hasNext()) {
-                questions.add(iterator.next());
+                StackOverflowQuestion question = iterator.next();
+                if(question.tags.contains("spring-boot")){
+                    questions.add(question);
+                }
             }
 
             Map<String, Integer> issueFrequencyMap = calculateIssueFrequency(questions);
@@ -143,24 +148,33 @@ public class HelloController {
         }
     }
 
-    private Map<Integer, List<String>> findIssuesInQuestions(List<StackOverflowQuestion> questions) {
-        Map<Integer, List<String>> issuesMap = new HashMap<>();
-        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
+    @GetMapping("/api/get_elapsed_time")
+    public List<Integer> getElapsedTime(){//todo: finish(count by second)
+        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        List<Integer> elapsedTimes = new ArrayList<>();
 
-        for (StackOverflowQuestion question : questions) {
-            Matcher matcher = pattern.matcher(question.body);
-            List<String> issues = new ArrayList<>();
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
 
-            while (matcher.find()) {
-                issues.add(matcher.group());
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+                if(question.is_answered){
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).is_accepted){
+                            elapsedTimes.add(calculateDaysBetween(question.creation_date, question.answers.get(i).creation_date));
+                        }
+                    }
+                }
             }
+            return elapsedTimes;
 
-            if (!issues.isEmpty()) {
-                issuesMap.put(question.question_id, issues); // Assuming each question has a unique ID
-            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return List.of();
         }
-
-        return issuesMap;
     }
 
 
@@ -224,5 +238,15 @@ public class HelloController {
         }
 
         return issueFrequencyMap;
+    }
+
+    public static int calculateDaysBetween(long timestamp1, long timestamp2) {
+        // 将Unix时间戳转换为Instant对象
+        Instant instant1 = Instant.ofEpochSecond(timestamp1);
+        Instant instant2 = Instant.ofEpochSecond(timestamp2);
+
+        // 计算两个Instant之间的天数差
+
+        return (int) ChronoUnit.SECONDS.between(instant1, instant2);
     }
 }
