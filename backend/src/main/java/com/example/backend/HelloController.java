@@ -8,13 +8,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
 public class HelloController {
 
     @GetMapping("/api/get_tag_by_count")
-    public String[] getTagByCount() {
+    public String[] getTagByCount() {//todo:finish
         String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
@@ -56,8 +58,8 @@ public class HelloController {
     }
     // ... existing code ...
 
-    @GetMapping("/api/get_tag_by_reputation")
-    public List<String> getTopNTopicsByEngagement() {
+    @GetMapping("/api/get_tag_by_engagement")
+    public List<String> getTopNTopicsByEngagement() {//todo:finish
         String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json"; // JSON file path
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> topicEngagementMap = new HashMap<>();
@@ -111,6 +113,29 @@ public class HelloController {
             return List.of();
         }
     }
+
+//    @GetMapping("/api/get_top_mistake")
+//    public List<String> getTopNMistake(){}
+//
+//    private Map<String, List<String>> findIssuesInQuestions(List<StackOverflowQuestion> questions) {
+//        Map<String, List<String>> issuesMap = new HashMap<>();
+//        Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
+//
+//        for (StackOverflowQuestion question : questions) {
+//            Matcher matcher = pattern.matcher(question.body);
+//            List<String> issues = new ArrayList<>();
+//
+//            while (matcher.find()) {
+//                issues.add(matcher.group());
+//            }
+//
+//            if (!issues.isEmpty()) {
+//                issuesMap.put(question.id, issues); // Assuming each question has a unique ID
+//            }
+//        }
+//
+//        return issuesMap;
+//    }
 
 
     private int calculateEngagement(int reputation, Object activity, double medianReputation) {
