@@ -2,13 +2,13 @@ package com.example.backend;
 import lombok.Data;
 @Data
 public class Owner {
-    private int reputation;
-    private int accept_rate;
-    private int user_id;
-    private String user_type;
-    private String profile_image;
-    private String display_name;
-    private String link;
+    public int reputation;
+    public int accept_rate;
+    public int user_id;
+    public String user_type;
+    public String profile_image;
+    public String display_name;
+    public String link;
 
     // Getters and setters for all fields
     // ...

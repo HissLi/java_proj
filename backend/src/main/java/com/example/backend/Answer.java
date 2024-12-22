@@ -6,18 +6,18 @@ import lombok.Data;
 import java.util.List;
 @Data
 public class Answer {
-    private List<String> tags;
-    private Owner owner;
-    private int score;
-    private int last_activity_date;
-    private int last_edit_date;
-    private int creation_date;
-    private int community_owned_date;
-    private int answer_id;
-    private int question_id;
-    private String link;
-    private String title;
-    private String body;
+    public List<String> tags;
+    public Owner owner;
+    public int score;
+    public int last_activity_date;
+    public int last_edit_date;
+    public int creation_date;
+    public int community_owned_date;
+    public int answer_id;
+    public int question_id;
+    public String link;
+    public String title;
+    public String body;
     @JsonProperty("is_accepted")
-    private boolean is_accepted;
+    public boolean is_accepted;
 }
