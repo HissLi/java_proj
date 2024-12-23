@@ -19,24 +19,80 @@ import java.util.stream.Collectors;
 @RestController
 public class HelloController {
     @GetMapping("/api/get_large_tags")
-    public List<String>getLargeTags(){//todo:finish. If you want to change the number of tags, see the todo below
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+    public List<String>getLargeTags(){//todo:finish.
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
-        Set<String> tags = new HashSet<>();
-
+        Map<String, Integer> topicEngagementMap = new HashMap<>();
+        List<Integer> reputations = new ArrayList<>();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        Map<String, Integer> tagCountMap = new HashMap<>();
         try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
                 .readValues(new File(jsonFilePath))) {
+
             while (iterator.hasNext()) {
                 StackOverflowQuestion question = iterator.next();
-                tags.addAll(question.tags);
+                List<String> tags = question.tags; // 假设getTags()返回List<String>
+
+                // 统计每个tag的出现次数
+                for (String tag : tags) {
+                    tagCountMap.put(tag, tagCountMap.getOrDefault(tag, 0) + 1);
+
+                }
+                questions.add(question);
+                reputations.add(question.owner.reputation);
+                if (question.answers != null) {
+                    for (Answer answer : question.answers) {
+                        reputations.add(answer.owner.reputation);
+                    }
+                }
+                if (question.comments != null) {
+                    for (Comment comment : question.comments) {
+                        reputations.add(comment.owner.reputation);
+                    }
+                }
             }
 
-            List<String> tagList = new ArrayList<>(tags);
-            Collections.shuffle(tagList); // Shuffle the list to randomize the order
-//            return tagList;//todo: return all
-            return tagList.stream()
-                    .limit(20) // todo: top N tags
+            double medianReputation = calculateMedian(reputations);
+
+            for (StackOverflowQuestion question : questions) {
+                int questionEngagement = calculateEngagement(question.owner.reputation, question, medianReputation);
+                updateTopicEngagement(topicEngagementMap, question.tags, questionEngagement);
+
+                if (question.answers != null) {
+                    for (Answer answer : question.answers) {
+                        int answerEngagement = calculateEngagement(answer.owner.reputation, answer, medianReputation);
+                        updateTopicEngagement(topicEngagementMap, question.tags, answerEngagement);
+                    }
+                }
+
+                if (question.comments != null) {
+                    for (Comment comment : question.comments) {
+                        int commentEngagement = calculateEngagement(comment.owner.reputation, comment, medianReputation);
+                        updateTopicEngagement(topicEngagementMap, question.tags, commentEngagement);
+                    }
+                }
+            }
+            List<Map.Entry<String, Integer>> topTags = tagCountMap.entrySet()
+                    .stream()
+                    .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                    .skip(1)
+                    .limit(10)
                     .collect(Collectors.toList());
+            List<String> results = new ArrayList<>();
+
+
+            // 输出前十个tags及其数量
+            for (Map.Entry<String, Integer> entry : topTags) {
+                results.add(entry.getKey());
+            }
+            List<String> topTag2 = getTopNTags(topicEngagementMap, 10); // Assuming you want the top 10 topics
+            Set<String> topTag2Set = new HashSet<>(topTag2);
+            List<String> add =  topTags.stream()
+                    .map(Map.Entry::getKey)
+                    .filter(tag -> !topTag2Set.contains(tag))
+                    .collect(Collectors.toList());
+            results.addAll(add);
+            return results;
         } catch (IOException e) {
             e.printStackTrace();
             return List.of();
@@ -45,7 +101,7 @@ public class HelloController {
 
     @GetMapping("/api/get_tag_by_count")
     public String[] getTagByCount() {//todo:finish
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
@@ -89,7 +145,7 @@ public class HelloController {
 
     @GetMapping("/api/get_tag_by_engagement")
     public List<String> getTopNTopicsByEngagement() {//todo:finish
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> topicEngagementMap = new HashMap<>();
         List<Integer> reputations = new ArrayList<>();
@@ -145,7 +201,7 @@ public class HelloController {
 
     @GetMapping("/api/get_top_mistake/{tag}")
     public List<String> getTopNMistake(@PathVariable String tag){//todo: 暂时按照spring-boot写
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
 
@@ -154,7 +210,7 @@ public class HelloController {
 
             while (iterator.hasNext()) {
                 StackOverflowQuestion question = iterator.next();
-                if(question.tags.contains(tag)){
+                if(question.tags.contains(tag) || tag.equals("all")){
                     questions.add(question);
                 }
             }
@@ -176,7 +232,7 @@ public class HelloController {
 
     @GetMapping("/api/get_elapsed_time")
     public List<Integer> getElapsedTime(){//todo: finish(count by second)
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -205,7 +261,7 @@ public class HelloController {
 
     @GetMapping("/api/get_reputation_value")
     public List<Integer> getReputationValue(){//todo: finish
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -232,9 +288,44 @@ public class HelloController {
         }
     }
 
+    @GetMapping("/api/get_times_and_reputation")
+    public int[][] getTimesAReputation(){//todo: finish
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Answer> best_answers = new ArrayList<>();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+        List<Integer> elapsedTimes = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                if(question.is_answered){
+                    for (int i = 0; i < question.answers.size(); i++) {
+                        if(question.answers.get(i).is_accepted){
+                            questions.add(question);
+                            best_answers.add(question.answers.get(i));
+                        }
+                    }
+                }
+            }
+            int[][] detail_info = new int[best_answers.size()][2];
+            for (int i = 0; i < best_answers.size(); i++) {
+                detail_info[i][0] = calculateDaysBetween(questions.get(i).creation_date, best_answers.get(i).creation_date);
+                detail_info[i][1] = best_answers.get(i).owner.reputation;
+            }
+            return detail_info;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new int[1][2];
+        }
+    }
+
     @GetMapping("/api/get_detail_matrix")
     public int[][] getDetailMatrix(){//todo: finish
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         int[][] matrix = new int[2][2];
@@ -287,7 +378,7 @@ public class HelloController {
 
     @GetMapping("/api/get_answer_length")
     public List<Integer> getAnswerLength(){//todo: finish. (If answer is accepted, count the length)
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         List<StackOverflowQuestion> questions = new ArrayList<>();
         List<Integer> elapsedTimes = new ArrayList<>();
@@ -335,7 +426,7 @@ public class HelloController {
     }
 
     private Map<String, Integer> calculateTopicFrequency() {
-        String jsonFilePath = "D:\\java_proj\\backend\\src\\main\\java\\com\\example\\backend\\Data.json";
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> tagCountMap = new HashMap<>();
 
@@ -417,6 +508,16 @@ public class HelloController {
                 .collect(Collectors.toList()); // Collect to a list
     }
 
+    private List<String> getTopNTags(Map<String, Integer> map, int N) {//especially for tag, without count
+        return map.entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue())) // Sort by value in descending order
+                .skip(1) // Skip the first entry
+                .limit(N) // Limit to the next N entries
+                .map(Map.Entry::getKey) // Format the output
+                .collect(Collectors.toList()); // Collect to a list
+    }
+
     private Map<String, Integer> calculateIssueFrequency(List<StackOverflowQuestion> questions) {
         Map<String, Integer> issueFrequencyMap = new HashMap<>();
         Pattern pattern = Pattern.compile("\\b\\w*(error|exception)\\w*\\b", Pattern.CASE_INSENSITIVE);
@@ -448,11 +549,11 @@ public class HelloController {
 
     private int countWordsExcludingHtmlAndCode(String answer) {
         // Replace HTML tags and code tags with a single character
-        String cleanedAnswer = answer.replaceAll("<a/s+href=\"[^\"]*\">[^<]*</a>", " ")
+        String cleanedAnswer = answer.replaceAll("<a\\s+href=\"[^\"]*\">[^<]*</a>", " ")
                 .replaceAll("<code>[^<]*</code>", " ");
 
         // Split the cleaned answer by whitespace to count words
-        String[] words = cleanedAnswer.trim().split("/s+");
+        String[] words = cleanedAnswer.trim().split("\\s+");
         return words.length;
     }
 }
