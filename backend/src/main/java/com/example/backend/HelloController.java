@@ -2,6 +2,7 @@ package com.example.backend;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -404,23 +405,119 @@ public class HelloController {
         }
     }
 
-    @GetMapping("/api/topic_frequency")
-    public List<String> getTopicFrequency(@RequestParam(required = false) String topic,
-                                          @RequestParam(required = false) Integer topN) {
+    @GetMapping("/api/topic_frequency/topic/{topic}")
+    public ResponseEntity<byte[]> getTopicFrequency(@PathVariable String topic) {
         Map<String, Integer> topicFrequencyMap = calculateTopicFrequency();
         if (topic != null) {
-            // 返回特定主题的频率
-            return List.of("Topic: " + topic + " Frequency: " + topicFrequencyMap.getOrDefault(topic, 0));
-        } else if (topN != null) {
-            // 返回前N个主题
-            return topicFrequencyMap.entrySet()
+            String topicFrequency = "Topic: " + topic + " Frequency: " + topicFrequencyMap.getOrDefault(topic, 0);
+
+            // Convert the string to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                byte[] jsonBytes = objectMapper.writeValueAsBytes(Collections.singletonList(topicFrequency));
+
+                // Set headers for file download
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setContentDisposition(ContentDisposition.builder("attachment").filename("specific_topic_frequency.json").build());
+
+                return new ResponseEntity<>(jsonBytes, headers, HttpStatus.OK);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/topic_frequency/num/{topN}")
+    public ResponseEntity<byte[]> getTopicFrequency(@PathVariable Integer topN) {
+        Map<String, Integer> topicFrequencyMap = calculateTopicFrequency();
+        if (topN > 0) {
+            List<String> topicFrequencies = topicFrequencyMap.entrySet()
                     .stream()
                     .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
                     .limit(topN)
                     .map(entry -> "Topic: " + entry.getKey() + " Frequency: " + entry.getValue())
                     .collect(Collectors.toList());
+
+            // Convert the list to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                byte[] jsonBytes = objectMapper.writeValueAsBytes(topicFrequencies);
+
+                // Set headers for file download
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setContentDisposition(ContentDisposition.builder("attachment").filename("topic_frequencies.json").build());
+
+                return new ResponseEntity<>(jsonBytes, headers, HttpStatus.OK);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } else {
-            return List.of("请提供一个主题或topN参数。");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/error_frequency/topic/{topic}")
+    public ResponseEntity<byte[]> getErrorFrequency(@PathVariable String topic) {
+        Map<String, Integer> topicFrequencyMap = calculateErrorFrequency();
+        if (topic != null) {
+            assert topicFrequencyMap != null;
+            String errorFrequency = "Error type: " + topic + " Frequency: " + topicFrequencyMap.getOrDefault(topic, 0);
+
+            // Convert the string to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                byte[] jsonBytes = objectMapper.writeValueAsBytes(Collections.singletonList(errorFrequency));
+
+                // Set headers for file download
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setContentDisposition(ContentDisposition.builder("attachment").filename("specific_error_frequency.json").build());
+
+                return new ResponseEntity<>(jsonBytes, headers, HttpStatus.OK);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/api/error_frequency/num/{topN}")
+    public ResponseEntity<byte[]> getErrorFrequency(@PathVariable Integer topN) {
+        Map<String, Integer> topicFrequencyMap = calculateErrorFrequency();
+        if (topN > 0) {
+            assert topicFrequencyMap != null;
+            List<String> errorFrequencies = topicFrequencyMap.entrySet()
+                    .stream()
+                    .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                    .limit(topN)
+                    .map(entry -> "Error type: " + entry.getKey() + " Frequency: " + entry.getValue())
+                    .collect(Collectors.toList());
+
+            // Convert the list to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                byte[] jsonBytes = objectMapper.writeValueAsBytes(errorFrequencies);
+
+                // Set headers for file download
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setContentDisposition(ContentDisposition.builder("attachment").filename("error_frequencies.json").build());
+
+                return new ResponseEntity<>(jsonBytes, headers, HttpStatus.OK);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -460,6 +557,26 @@ public class HelloController {
         } catch (IOException e) {
             e.printStackTrace();
             return new HashMap<>();
+        }
+    }
+
+    private Map<String, Integer> calculateErrorFrequency() {
+        String jsonFilePath = "src/main/java/com/example/backend/Data.json";
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<StackOverflowQuestion> questions = new ArrayList<>();
+
+        try (MappingIterator<StackOverflowQuestion> iterator = objectMapper.readerFor(StackOverflowQuestion.class)
+                .readValues(new File(jsonFilePath))) {
+
+            while (iterator.hasNext()) {
+                StackOverflowQuestion question = iterator.next();
+                questions.add(question);
+            }
+
+            return calculateIssueFrequency(questions);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
