@@ -14,7 +14,7 @@ function updateTopic(topic: string) {
   <div class="container">
     <div id="header">
       <el-icon style="font-size: 48px"><Cpu /></el-icon>
-      <el-text class="mx-1" style="font-size: 48px">Stack Overflow Data Analysis System</el-text>
+      <el-text class="mx-1" style="font-size: 48px">StackOverflow Data Analysis System</el-text>
     </div>
     <div class="content">
       <div id="asider" style="display: flex; flex-direction: column">

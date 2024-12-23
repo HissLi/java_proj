@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AnswerAnalysis: typeof import('./src/components/AnswerAnalysis.vue')['default']
+    CodingAnalysis: typeof import('./src/components/answer/CodingAnalysis.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElContainer: typeof import('element-plus/es')['ElContainer']
@@ -23,8 +24,11 @@ declare module 'vue' {
     IconEcosystem: typeof import('./src/components/icons/IconEcosystem.vue')['default']
     IconSupport: typeof import('./src/components/icons/IconSupport.vue')['default']
     IconTooling: typeof import('./src/components/icons/IconTooling.vue')['default']
+    LengthAnalysis: typeof import('./src/components/answer/LengthAnalysis.vue')['default']
     MistakeAnalysis: typeof import('./src/components/MistakeAnalysis.vue')['default']
+    ReputationAnalysis: typeof import('./src/components/answer/ReputationAnalysis.vue')['default']
     TheWelcome: typeof import('./src/components/TheWelcome.vue')['default']
+    TimeAnalysis: typeof import('./src/components/answer/TimeAnalysis.vue')['default']
     TopicAnalysis: typeof import('./src/components/TopicAnalysis.vue')['default']
     WelcomeItem: typeof import('./src/components/WelcomeItem.vue')['default']
   }
