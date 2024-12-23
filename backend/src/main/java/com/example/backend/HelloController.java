@@ -86,13 +86,12 @@ public class HelloController {
                 results.add(entry.getKey());
             }
             List<String> topTag2 = getTopNTags(topicEngagementMap, 10); // Assuming you want the top 10 topics
-            Set<String> topTag2Set = new HashSet<>(topTag2);
-            List<String> add =  topTags.stream()
-                    .map(Map.Entry::getKey)
-                    .filter(tag -> !topTag2Set.contains(tag))
-                    .collect(Collectors.toList());
-            results.addAll(add);
-            return results;
+            // Use a Set to merge and ensure uniqueness
+            Set<String> uniqueTags = new HashSet<>();
+            uniqueTags.addAll(topTags.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+            uniqueTags.addAll(topTag2);
+
+            return new ArrayList<>(uniqueTags);
         } catch (IOException e) {
             e.printStackTrace();
             return List.of();
